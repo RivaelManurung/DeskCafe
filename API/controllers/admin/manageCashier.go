@@ -163,10 +163,17 @@ func UpdateCashier(ctx *fiber.Ctx) error {
 		})
 	}
 
-	cashier.Username = username
-	cashier.Phone = phone
+	updates := map[string]interface{}{
+		"Username": username,
+		"Phone":    phone,
+	}
 
-	database.DB.Save(&cashier)
+	result := database.DB.Model(&cashier).Updates(updates)
+	if result.Error != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Error updating",
+		})
+	}
 	return ctx.JSON(cashier)
 }
 func DeleteCashier(ctx *fiber.Ctx) error {

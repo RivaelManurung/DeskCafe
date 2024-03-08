@@ -11,7 +11,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-const SecretKey = "secret"
+const CashierSecretKey = "cashier_secret"
 
 func Login(ctx *fiber.Ctx) error {
 	var data map[string]string
@@ -39,9 +39,10 @@ func Login(ctx *fiber.Ctx) error {
 	claims := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
 		Issuer:    strconv.Itoa(int(cashier.Id)),
 		ExpiresAt: time.Now().Add(time.Minute * 30).Unix(),
+		Subject:   "cashier",
 	})
 
-	token, err := claims.SignedString([]byte(SecretKey))
+	token, err := claims.SignedString([]byte(CashierSecretKey))
 
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -50,7 +51,7 @@ func Login(ctx *fiber.Ctx) error {
 	}
 
 	cookie := fiber.Cookie{
-		Name:     "jwt",
+		Name:     "jwtCashier",
 		Value:    token,
 		Expires:  time.Now().Add(time.Minute * 30),
 		HTTPOnly: true,
@@ -65,9 +66,9 @@ func Login(ctx *fiber.Ctx) error {
 }
 
 func Profile(ctx *fiber.Ctx) error {
-	cookie := ctx.Cookies("jwt")
+	cookie := ctx.Cookies("jwtCashier")
 	token, err := jwt.ParseWithClaims(cookie, &jwt.StandardClaims{}, func(t *jwt.Token) (interface{}, error) {
-		return []byte(SecretKey), nil
+		return []byte(CashierSecretKey), nil
 	})
 
 	if err != nil {
@@ -87,7 +88,7 @@ func Profile(ctx *fiber.Ctx) error {
 
 func Logout(ctx *fiber.Ctx) error {
 	cookie := fiber.Cookie{
-		Name:     "jwt",
+		Name:     "jwtCashier",
 		Value:    "",
 		Expires:  time.Now().Add(-time.Minute),
 		HTTPOnly: true,

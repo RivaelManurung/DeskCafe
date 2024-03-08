@@ -5,10 +5,11 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-const SecretKey = "secret"
+const AdminSecretKey = "admin_secret"
+const CashierSecretKey = "cashier_secret"
 
-func RequiredLogin(ctx *fiber.Ctx) error {
-	cookie := ctx.Cookies("jwt")
+func RequiredLoginAdmin(ctx *fiber.Ctx) error {
+	cookie := ctx.Cookies("jwtAdmin")
 
 	if cookie == "" {
 		ctx.Status(fiber.StatusUnauthorized)
@@ -18,7 +19,7 @@ func RequiredLogin(ctx *fiber.Ctx) error {
 	}
 
 	token, err := jwt.ParseWithClaims(cookie, &jwt.StandardClaims{}, func(t *jwt.Token) (interface{}, error) {
-		return []byte(SecretKey), nil
+		return []byte(AdminSecretKey), nil
 	})
 
 	if err != nil {
@@ -38,6 +39,53 @@ func RequiredLogin(ctx *fiber.Ctx) error {
 	}
 
 	ctx.Locals("id", claims.Issuer)
+
+	if claims.Subject != "admin" {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "Access denied",
+		})
+	}
+
+	return ctx.Next()
+}
+
+func RequiredLoginCashier(ctx *fiber.Ctx) error {
+	cookie := ctx.Cookies("jwtCashier")
+
+	if cookie == "" {
+		ctx.Status(fiber.StatusUnauthorized)
+		return ctx.JSON(fiber.Map{
+			"message": "unauthenticated",
+		})
+	}
+
+	token, err := jwt.ParseWithClaims(cookie, &jwt.StandardClaims{}, func(t *jwt.Token) (interface{}, error) {
+		return []byte(CashierSecretKey), nil
+	})
+
+	if err != nil {
+		ctx.Status(fiber.StatusUnauthorized)
+		return ctx.JSON(fiber.Map{
+			"message": "unauthenticated",
+		})
+	}
+
+	claims, ok := token.Claims.(*jwt.StandardClaims)
+
+	if !ok || !token.Valid {
+		ctx.Status(fiber.StatusUnauthorized)
+		return ctx.JSON(fiber.Map{
+			"message": "unauthenticated",
+		})
+	}
+
+	ctx.Locals("id", claims.Issuer)
+
+	if claims.Subject != "cashier" {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "Access denied",
+		})
+	}
 
 	return ctx.Next()
 }
