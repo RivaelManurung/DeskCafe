@@ -7,6 +7,7 @@ import (
 
 const AdminSecretKey = "admin_secret"
 const CashierSecretKey = "cashier_secret"
+const CustomerSecretKey = "customer_secret"
 
 func RequiredLoginAdmin(ctx *fiber.Ctx) error {
 	cookie := ctx.Cookies("jwtAdmin")
@@ -82,6 +83,45 @@ func RequiredLoginCashier(ctx *fiber.Ctx) error {
 	ctx.Locals("id", claims.Issuer)
 
 	if claims.Subject != "cashier" {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "Access denied",
+		})
+	}
+
+	return ctx.Next()
+}
+
+func RequiredLoginCustomer(ctx *fiber.Ctx) error {
+	cookie := ctx.Cookies("jwtCustomer")
+
+	if cookie == "" {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "Unauthenticated",
+		})
+	}
+
+	token, err := jwt.ParseWithClaims(cookie, &jwt.StandardClaims{}, func(t *jwt.Token) (interface{}, error) {
+		return []byte(CustomerSecretKey), nil
+	})
+
+	if err != nil {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "Unauthenticated",
+		})
+	}
+
+	claims, ok := token.Claims.(*jwt.StandardClaims)
+
+	if !ok || !token.Valid {
+		ctx.Status(fiber.StatusUnauthorized)
+		return ctx.JSON(fiber.Map{
+			"message": "unauthenticated",
+		})
+	}
+
+	ctx.Locals("id", claims.Issuer)
+
+	if claims.Subject != "customer" {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"message": "Access denied",
 		})

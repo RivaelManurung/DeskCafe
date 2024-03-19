@@ -7,6 +7,8 @@ import (
 	cashierController "pa2/controllers/cashier"
 
 	fiber "github.com/gofiber/fiber/v2"
+
+	customerController "pa2/controllers/customer"
 )
 
 func Setup(app *fiber.App) {
@@ -53,4 +55,12 @@ func Setup(app *fiber.App) {
 	cashier.Use(middleware.RequiredLoginCashier)
 	cashier.Get("/profile", cashierController.Profile)
 	cashier.Post("/logout", cashierController.Logout)
+
+	//Auth Customer
+	customer := app.Group("/customer")
+	customer.Post("/register", customerController.RegisterCustomer)
+	customer.Post("/login", customerController.LoginCustomer)
+	customer.Use(middleware.RequiredLoginCustomer)
+	customer.Get("/profile", customerController.Profile)
+	customer.Post("/logout", customerController.Logout)
 }
