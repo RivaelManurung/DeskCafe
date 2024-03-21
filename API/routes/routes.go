@@ -49,12 +49,23 @@ func Setup(app *fiber.App) {
 	admin.Put("/product/update/:id", controllers.UpdateProduct)
 	admin.Delete("/product/delete/:id", controllers.DeleteProduct)
 
+	//manage Announcement with Admin
+	admin.Post("/announcement", controllers.CreateAnnouncement)
+	admin.Get("/announcement/index", controllers.IndexAnnouncement)
+	admin.Get("/announcement/show/:id", controllers.ShowAnnouncement)
+	admin.Put("/announcement/update/:id", controllers.UpdateAnnouncement)
+	admin.Delete("/announcement/delete/:id", controllers.DeleteAnnouncement)
+
 	//Auth Cashier
 	cashier := app.Group("/cashier")
 	cashier.Post("/login", cashierController.Login)
 	cashier.Use(middleware.RequiredLoginCashier)
 	cashier.Get("/profile", cashierController.Profile)
 	cashier.Post("/logout", cashierController.Logout)
+	//Approval Cashier
+	cashier.Put("/approvebooking/:id", cashierController.ApproveBooking)
+	cashier.Get("/getbookings", cashierController.GetBooking)
+	cashier.Put("/rejectbooking/:id", cashierController.RejectBooking)
 
 	//Auth Customer
 	customer := app.Group("/customer")
@@ -63,4 +74,15 @@ func Setup(app *fiber.App) {
 	customer.Use(middleware.RequiredLoginCustomer)
 	customer.Get("/profile", customerController.Profile)
 	customer.Post("/logout", customerController.Logout)
+
+	//BookingQueue Customer
+	customer.Post("/booking", customerController.CreateBooking)
+	customer.Get("/booking/index", customerController.IndexBooking)
+	customer.Get("/booking/show/:id", customerController.ShowBooking)
+	customer.Put("/booking/update/:id", customerController.UpdateBooking)
+	customer.Delete("/booking/delete/:id", customerController.DeleteBooking)
+
+	//Proof Of Payment Customer
+	customer.Post("/proof-of-payment", customerController.SendPayment)
+
 }

@@ -100,3 +100,107 @@ func Logout(ctx *fiber.Ctx) error {
 		"message": "Logout successfully",
 	})
 }
+
+func GetBooking(ctx *fiber.Ctx) error {
+	var booking []models.BookingQueue
+
+	database.DB.Find(&booking)
+
+	if len(booking) == 0 {
+		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "Booking not found",
+		})
+	}
+
+	return ctx.JSON(booking)
+}
+
+func ApproveBooking(ctx *fiber.Ctx) error {
+	bookingIDStr := ctx.Params("id")
+	bookingID, err := strconv.Atoi(bookingIDStr)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "invalid booking ID",
+		})
+	}
+
+	var booking models.BookingQueue
+	result := database.DB.Where("id = ?", bookingID).Find(&booking)
+	if result.RowsAffected == 0 {
+		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "Data not found",
+		})
+	}
+
+	if booking.Status == 1 {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Booking already approved",
+		})
+	}
+
+	if booking.Status == 2 {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Booking already rejected",
+		})
+	}
+
+	update := map[string]interface{}{
+		"Status": 1,
+	}
+
+	result = database.DB.Model(&booking).Updates(update)
+	if result.Error != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Error approving booking",
+		})
+	}
+
+	return ctx.JSON(fiber.Map{
+		"message": "Booking approved successfully",
+	})
+}
+
+func RejectBooking(ctx *fiber.Ctx) error {
+	bookingIDStr := ctx.Params("id")
+	bookingID, err := strconv.Atoi(bookingIDStr)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "invalid booking ID",
+		})
+	}
+
+	var booking models.BookingQueue
+	result := database.DB.Where("id = ?", bookingID).Find(&booking)
+	if result.RowsAffected == 0 {
+		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "Data not found",
+		})
+	}
+
+	if booking.Status == 2 {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Booking already rejected",
+		})
+	}
+
+	if booking.Status == 1 {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Booking already approved",
+		})
+	}
+
+	update := map[string]interface{}{
+		"Status": 2,
+	}
+
+	result = database.DB.Model(&booking).Updates(update)
+	if result.Error != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Error rejecting booking",
+		})
+	}
+
+	return ctx.JSON(fiber.Map{
+		"message": "Booking rejected successfully",
+	})
+}
